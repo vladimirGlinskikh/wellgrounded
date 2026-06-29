@@ -1,8 +1,7 @@
 package dev.wellgrounded.taskplatform.api;
 
-import dev.wellgrounded.taskplatform.domain.Task;
-import dev.wellgrounded.taskplatform.domain.TaskStatus;
 import dev.wellgrounded.taskplatform.application.TaskService;
+import dev.wellgrounded.taskplatform.domain.TaskPriority;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,21 +18,32 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<Task> getAllTasks() {
+    public List<TaskDto> getAllTasks() {
         return taskService.getAllTasks();
     }
 
     @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody CreateTaskRequest request) {
-        Task task = taskService.createTask(request.title(), request.description(), request.priority());
+    public ResponseEntity<TaskDto> createTask(@RequestBody CreateTaskRequest request) {
+        TaskDto task = taskService.createTask(
+                request.title(), 
+                request.description(), 
+                request.priority()
+        );
         return ResponseEntity.ok(task);
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Task> updateStatus(@PathVariable String id, @RequestBody TaskStatus status) {
-        Task updated = taskService.updateStatus(id, status);
+    public ResponseEntity<TaskDto> updateStatus(
+            @PathVariable String id, 
+            @RequestBody String status) {
+
+        TaskDto updated = taskService.updateStatus(id, new dev.wellgrounded.taskplatform.domain.Pending());
         return ResponseEntity.ok(updated);
     }
 }
 
-record CreateTaskRequest(String title, String description, dev.wellgrounded.taskplatform.domain.TaskPriority priority) {}
+record CreateTaskRequest(
+        String title,
+        String description,
+        TaskPriority priority
+) {}

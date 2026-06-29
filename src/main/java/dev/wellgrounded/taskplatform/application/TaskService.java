@@ -1,46 +1,68 @@
 package dev.wellgrounded.taskplatform.application;
 
-import dev.wellgrounded.taskplatform.domain.Task;
-import dev.wellgrounded.taskplatform.domain.TaskStatus;
+import dev.wellgrounded.taskplatform.api.TaskDto;
+import dev.wellgrounded.taskplatform.domain.*;
+import dev.wellgrounded.taskplatform.infrastructure.TaskEntity;
+import dev.wellgrounded.taskplatform.infrastructure.TaskRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@Transactional
 public class TaskService {
 
-    private final Map<String, Task> tasks = new ConcurrentHashMap<>();
+    private final TaskRepository repository;
 
-    public List<Task> getAllTasks() {
-        return List.copyOf(tasks.values());
+    public TaskService(TaskRepository repository) {
+        this.repository = repository;
     }
 
-    public Task createTask(String title, String description, dev.wellgrounded.taskplatform.domain.TaskPriority priority) {
+    public List<TaskDto> getAllTasks() {
+        return repository.findAll().stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    public TaskDto createTask(String title, String description, TaskPriority priority) {
         String id = UUID.randomUUID().toString();
-        Task task = new Task(
-                id,
-                title,
-                description,
-                new dev.wellgrounded.taskplatform.domain.Pending(),
-                priority,
-                Instant.now(),
-                Instant.now()
-        );
-        tasks.put(id, task);
-        return task;
+
+        var entity = new TaskEntity();
+        entity.setId(id);
+        entity.setTitle(title);
+        entity.setDescription(description);
+        entity.setStatus("PENDING");
+        entity.setPriority(priority.name());
+        entity.setCreatedAt(Instant.now());
+        entity.setUpdatedAt(Instant.now());
+
+        var saved = repository.save(entity);
+        return toDto(saved);
     }
 
-    public Task updateStatus(String id, TaskStatus newStatus) {
-        Task existing = tasks.get(id);
-        if (existing == null) {
-            throw new IllegalArgumentException("Task not found");
-        }
-        Task updated = existing.withStatus(newStatus);
-        tasks.put(id, updated);
-        return updated;
+    public TaskDto updateStatus(String id, TaskStatus newStatus) {
+        var entity = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found: " + id));
+
+        entity.setStatus(newStatus.getClass().getSimpleName().toUpperCase());
+        entity.setUpdatedAt(Instant.now());
+
+        var saved = repository.save(entity);
+        return toDto(saved);
+    }
+
+    private TaskDto toDto(TaskEntity entity) {
+        return new TaskDto(
+                entity.getId(),
+                entity.getTitle(),
+                entity.getDescription(),
+                entity.getStatus(),
+                TaskPriority.valueOf(entity.getPriority()),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt()
+        );
     }
 }
