@@ -14,15 +14,17 @@
 - Virtual Threads, Structured Concurrency
 
 ## Как запустить
-- docker compose down
-- docker compose up -d --build
-- ./gradlew clean bootRun
+1. docker compose down
+2. docker compose up -d --build
+3. ./gradlew clean bootRun
+4. http://localhost:8080/swagger-ui/index.html (тестируем эндпоинты)
 
 ## Структура проекта
 - `domain` - бизнес-модели (Records, Sealed types)
 - `application` - сервисы
 - `infrastructure` - адаптеры (БД, очереди)
 - `api` - контроллеры
+- `config` - конфигурации
 
 ## План по главам
 (будет обновляться)
